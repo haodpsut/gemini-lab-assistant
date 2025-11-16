@@ -1,0 +1,5 @@
+{
+  "name": "Gemini Lab Assistant",
+  "description": "An interactive lab assistant for university students, providing guided assignments, knowledge reviews, and contextual hints for subjects like Deep Reinforcement Learning, Machine Learning, and Federated Learning.",
+  "requestFramePermissions": []
+}
