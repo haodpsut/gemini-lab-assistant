@@ -1,13 +1,54 @@
 
-import React, { useState, useMemo } from 'react';
-import { Lab, Subject } from './types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Lab } from './types';
 import { LAB_DATA } from './constants';
 import SubjectSelector from './components/SubjectSelector';
 import LabViewer from './components/LabViewer';
+import ApiKeyManager from './components/ApiKeyManager';
+
+// This is a polyfill for the sandboxed environment.
+// In a real app, you would use a more robust solution for managing environment variables.
+if (typeof process === 'undefined') {
+  (window as any).process = { env: {} };
+}
 
 const App: React.FC = () => {
+  const [apiKey, setApiKey] = useState<string | null>(() => {
+    // Check for key in localStorage on initial load
+    try {
+      return localStorage.getItem('gemini-api-key');
+    } catch (e) {
+      console.error("Could not access localStorage", e);
+      return null;
+    }
+  });
+
   const [selectedLabId, setSelectedLabId] = useState<string | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // When apiKey state changes, update the mock process.env and localStorage
+    if (apiKey) {
+      (process.env as any).API_KEY = apiKey;
+      try {
+        localStorage.setItem('gemini-api-key', apiKey);
+      } catch (e) {
+        console.error("Could not access localStorage", e);
+      }
+    } else {
+       delete (process.env as any).API_KEY;
+       try {
+        localStorage.removeItem('gemini-api-key');
+       } catch (e) {
+        console.error("Could not access localStorage", e);
+       }
+    }
+  }, [apiKey]);
+
+
+  const handleKeySubmit = (key: string) => {
+    setApiKey(key);
+  };
 
   const handleSelectLab = (subjectId: string, labId: string) => {
     setSelectedSubjectId(subjectId);
@@ -24,6 +65,10 @@ const App: React.FC = () => {
     const subject = LAB_DATA.find(s => s.id === selectedSubjectId);
     return subject?.labs.find(l => l.id === selectedLabId) || null;
   }, [selectedSubjectId, selectedLabId]);
+  
+  if (!apiKey) {
+    return <ApiKeyManager onKeySubmit={handleKeySubmit} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
